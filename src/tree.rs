@@ -344,7 +344,11 @@ impl Tree {
             &transaction::TransactionalTree,
         ) -> transaction::ConflictableTransactionResult<A, E>,
     {
-        Transactional::transaction(&self, f)
+        tracing::debug!("[sled] transaction function started");
+        let r = Transactional::transaction(&self, f);
+        tracing::debug!("[sled] transaction function finished");
+
+        r
     }
 
     /// Create a new batched update that can be

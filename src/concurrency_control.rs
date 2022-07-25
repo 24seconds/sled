@@ -89,6 +89,7 @@ impl ConcurrencyControl {
     }
 
     fn write(&self) -> Protector<'_> {
+        tracing::debug!("[sled write] started");
         #[cfg(feature = "testing")]
         COUNT.with(|c| {
             let mut c = c.borrow_mut();
@@ -96,9 +97,14 @@ impl ConcurrencyControl {
             assert_eq!(*c, 1);
         });
         self.enable();
+        tracing::debug!("[sled write] after enable");
         while !self.upgrade_complete.load(Acquire) {
+            tracing::debug!("[sled write] inside while loop");
             std::sync::atomic::spin_loop_hint()
         }
-        Protector::Write(self.rw.write())
+        tracing::debug!("[sled write] after while loop");
+        let a = Protector::Write(self.rw.write());
+        tracing::debug!("[sled write] after protector write");
+        a
     }
 }

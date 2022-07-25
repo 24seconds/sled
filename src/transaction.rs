@@ -91,7 +91,7 @@ use crate::{
 /// A transaction that will
 /// be applied atomically to the
 /// Tree.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct TransactionalTree {
     pub(super) tree: Tree,
     pub(super) writes: Rc<RefCell<Map<IVec, Option<IVec>>>>,
@@ -294,17 +294,23 @@ impl TransactionalTree {
     ) -> UnabortableTransactionResult<Option<IVec>> {
         let writes = self.writes.borrow();
         if let Some(first_try) = writes.get(key.as_ref()) {
+            tracing::debug!("[sled-get] first try");
             return Ok(first_try.clone());
         }
         let mut reads = self.read_cache.borrow_mut();
         if let Some(second_try) = reads.get(key.as_ref()) {
+            tracing::debug!("[sled-get] second try");
             return Ok(second_try.clone());
         }
+
+        tracing::debug!("[sled-get] not found in a cache, need to hit the backing db");
 
         // not found in a cache, need to hit the backing db
         let mut guard = pin();
         let get = loop {
+            tracing::debug!("[sled-get] get loop");
             if let Ok(get) = self.tree.get_inner(key.as_ref(), &mut guard)? {
+                tracing::debug!("[sled-get] get_inner get is ok");
                 break get;
             }
         };
@@ -383,13 +389,18 @@ pub struct TransactionalTrees {
 
 impl TransactionalTrees {
     fn stage(&self) -> UnabortableTransactionResult<Protector<'_>> {
-        Ok(concurrency_control::write())
+        tracing::debug!("[sled-tree] stage started"); 
+        let r = Ok(concurrency_control::write());
+        tracing::debug!("[sled-tree] stage finished");
+        r
     }
 
     fn unstage(&self) {
+        tracing::debug!("[sled-unsage] started");
         for tree in &self.inner {
             tree.unstage();
         }
+        tracing::debug!("[sled-unsage] finished");
     }
 
     fn validate(&self) -> bool {
@@ -459,17 +470,24 @@ pub trait Transactional<E = ()> {
         F: Fn(&Self::View) -> ConflictableTransactionResult<A, E>,
     {
         loop {
+            tracing::debug!("[sled-tree] transaction started");
             let tt = self.make_overlay()?;
+            tracing::debug!("[sled-tree] done tt");
             let view = Self::view_overlay(&tt);
+            tracing::debug!("[sled-tree] done view");
 
             // NB locks must exist until this function returns.
             let locks = if let Ok(l) = tt.stage() {
+                tracing::debug!("[sled-tree] inside if locks");
                 l
             } else {
+                tracing::debug!("[sled-tree] inside if else locks");
                 tt.unstage();
                 continue;
             };
+            tracing::debug!("[sled-tree] done locks");
             let ret = f(&view);
+            tracing::debug!("[sled-tree] done ret");
             if !tt.validate() {
                 tt.unstage();
                 continue;
@@ -483,10 +501,15 @@ pub trait Transactional<E = ()> {
                     return Ok(r);
                 }
                 Err(ConflictableTransactionError::Abort(e)) => {
+                    println!("sled abort");
                     return Err(TransactionError::Abort(e));
                 }
-                Err(ConflictableTransactionError::Conflict) => continue,
+                Err(ConflictableTransactionError::Conflict) => {
+                    println!("sled conflcit");
+                    continue
+                },
                 Err(ConflictableTransactionError::Storage(other)) => {
+                    println!("sled other");
                     return Err(TransactionError::Storage(other));
                 }
             }
