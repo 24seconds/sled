@@ -78,10 +78,12 @@ static QUEUE: Lazy<Queue, fn() -> Queue> = Lazy::new(init_queue);
 static BROKEN: AtomicBool = AtomicBool::new(false);
 
 fn init_queue() -> Queue {
+    tracing::debug!("init_queue strated");
     debug_delay();
     for _ in 0..DESIRED_WAITING_THREADS {
         debug_delay();
         if let Err(e) = spawn_new_thread(true) {
+            tracing::debug!("spawn_new_thread error");
             log::error!("failed to initialize threadpool: {:?}", e);
         }
     }
@@ -141,6 +143,7 @@ fn maybe_spawn_new_thread() -> Result<()> {
     }
 
     if !SPAWNING.compare_and_swap(false, true, SeqCst) {
+        tracing::debug!("[threadpool] maybe_spawn_new_thread before");
         spawn_new_thread(false)?;
     }
 
@@ -148,6 +151,7 @@ fn maybe_spawn_new_thread() -> Result<()> {
 }
 
 fn spawn_new_thread(is_immortal: bool) -> Result<()> {
+    tracing::debug!("[threadpool] spawn_new_thread started");
     if BROKEN.load(Relaxed) {
         return Err(Error::ReportableBug(
             "IO thread unexpectedly panicked. please report \
