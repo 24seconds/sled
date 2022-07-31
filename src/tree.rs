@@ -817,6 +817,7 @@ impl Tree {
     #[allow(clippy::used_underscore_binding)]
     pub async fn flush_async(&self) -> Result<usize> {
         let pagecache = self.context.pagecache.clone();
+        tracing::debug!("flush async");
         if let Some(result) = threadpool::spawn(move || pagecache.flush())?.await
         {
             result

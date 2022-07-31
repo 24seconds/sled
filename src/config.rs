@@ -341,6 +341,7 @@ impl Config {
     /// Opens a `Db` based on the provided config.
     pub fn open(&self) -> Result<Db> {
         // only validate, setup directory, and open file once
+        tracing::debug!("sled open called");
         self.validate()?;
 
         let mut config = self.clone();

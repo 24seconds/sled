@@ -863,7 +863,7 @@ pub(crate) fn roll_iobuf(iobufs: &Arc<IoBufs>) -> Result<usize> {
     if header::offset(header) == 0 {
         trace!("skipping roll_iobuf due to empty segment");
     } else {
-        trace!("sealing ioubuf from  roll_iobuf");
+        tracing::debug!("sealing ioubuf from  roll_iobuf");
         maybe_seal_and_write_iobuf(iobufs, &iobuf, header, false)?;
     }
 
@@ -933,6 +933,7 @@ pub(in crate::pagecache) fn make_stable_inner(
             // nothing to write, don't bother sealing
             // current IO buffer.
         } else {
+            tracing::debug!("make_stable_inner");
             maybe_seal_and_write_iobuf(iobufs, &iobuf, header, false)?;
             stable = iobufs.stable();
             // NB we have to continue here to possibly clear
@@ -1180,6 +1181,7 @@ pub(in crate::pagecache) fn maybe_seal_and_write_iobuf(
         );
         let iobufs = iobufs.clone();
         let iobuf = iobuf.clone();
+        tracing::debug!("maybe_seal_and_write_iobuf");
         let _result = threadpool::spawn(move || {
             if let Err(e) = iobufs.write_to_log(&iobuf) {
                 error!(

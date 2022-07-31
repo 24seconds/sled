@@ -904,6 +904,7 @@ impl PageCache {
             guard,
         )?;
 
+        tracing::debug!("pin_log started");
         iobuf::maybe_seal_and_write_iobuf(
             &self.log.iobufs,
             &batch_res.iobuf,
@@ -1276,6 +1277,7 @@ impl PageCache {
                     cache_infos: vec![cache_info],
                 });
 
+                tracing::debug!("rewrite page");
                 debug_delay();
                 let result = page_view.entry.compare_and_set(
                     page_view.read,
@@ -1309,7 +1311,7 @@ impl PageCache {
                         unsafe { new_shared.deref().log_size() };
                     let to_evict =
                         self.lru.accessed(pid, total_page_size, guard);
-                    trace!(
+                    tracing::debug!(
                         "accessed pid {} -> paging out pids {:?}",
                         pid,
                         to_evict
@@ -1318,13 +1320,13 @@ impl PageCache {
                         self.page_out(to_evict, guard)?;
                     }
 
-                    trace!("rewriting pid {} succeeded", pid);
+                    tracing::debug!("rewriting pid {} succeeded", pid);
 
                     return Ok(());
                 } else {
                     let _pointer = log_reservation.abort()?;
 
-                    trace!("rewriting pid {} failed", pid);
+                    tracing::debug!("rewriting pid {} failed", pid);
                 }
             } else {
                 trace!("rewriting page with pid {}", pid);
@@ -1347,7 +1349,7 @@ impl PageCache {
                     if page_view.is_free() {
                         (page_view, Update::Free)
                     } else {
-                        debug!(
+                        tracing::debug!(
                             "when rewriting pid {} \
                              we encountered a rewritten \
                              node with a link {:?} that \
@@ -1363,7 +1365,7 @@ impl PageCache {
 
                 let res = self.cas_page(pid, key, update, true, guard).map(
                     |res| {
-                        trace!(
+                        tracing::debug!(
                             "rewriting pid {} success: {}",
                             pid,
                             res.is_ok()

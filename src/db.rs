@@ -90,6 +90,7 @@ impl Db {
                     fem,
                 )
             });
+            tracing::debug!("flusher initialized");
             *context.flusher.lock() = flusher;
         }
 

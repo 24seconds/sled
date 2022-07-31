@@ -1095,6 +1095,7 @@ impl SegmentAccountant {
         let config = self.config.clone();
 
         io_fail!(&config, "file truncation");
+        tracing::debug!("truncate");
         threadpool::spawn(move || {
             debug!("truncating file to length {}", at);
             let res = config

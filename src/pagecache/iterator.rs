@@ -338,6 +338,7 @@ fn scan_segment_headers_and_tail(
         .map({
             // let config = config.clone();
             move |idx| {
+                tracing::debug!("scan_segment_headers_and_tail");
                 threadpool::spawn({
                     let config = config.clone();
                     move || fetch(idx, min, &config)

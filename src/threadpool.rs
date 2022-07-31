@@ -98,6 +98,7 @@ fn perform_work(is_immortal: bool) {
 
     while is_immortal || performed < 5 || contiguous_overshoots < 3 {
         debug_delay();
+        tracing::debug!("perform work, before recv_timeout");
         let task_res = QUEUE.recv_timeout(wait_limit);
 
         if let Some(task) = task_res {
@@ -107,6 +108,7 @@ fn perform_work(is_immortal: bool) {
             performed += 1;
         }
 
+        tracing::debug!("perform work, before try_recv");
         while let Some(task) = QUEUE.try_recv() {
             debug_delay();
             WAITING_THREAD_COUNT.fetch_sub(1, SeqCst);
@@ -131,6 +133,7 @@ fn perform_work(is_immortal: bool) {
 // Dynamic threads will terminate themselves if they don't
 // receive any work after one second.
 fn maybe_spawn_new_thread() -> Result<()> {
+    tracing::debug!("maybe_spawn_new_thread started");
     debug_delay();
     let total_workers = TOTAL_THREAD_COUNT.load(Acquire);
     debug_delay();
@@ -210,7 +213,9 @@ where
         promise_filler.fill(result);
     };
 
+    tracing::debug!("spawn, before send");
     let depth = QUEUE.send(Box::new(task));
+    tracing::debug!("spawn, depth: {:?}", depth);
 
     if depth > DESIRED_WAITING_THREADS {
         maybe_spawn_new_thread()?;

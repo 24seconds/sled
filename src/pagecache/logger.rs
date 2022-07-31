@@ -289,6 +289,7 @@ impl Log {
                 // Try to seal the buffer, and maybe write it if
                 // there are zero writers.
                 trace_once!("io buffer too full, spinning");
+                tracing::debug!("reserve_inner");
                 iobuf::maybe_seal_and_write_iobuf(
                     &self.iobufs,
                     &iobuf,
@@ -435,6 +436,7 @@ impl Log {
             );
             let iobufs = self.iobufs.clone();
             let iobuf = iobuf.clone();
+            tracing::debug!("exit_reservation");
             threadpool::spawn(move || {
                 if let Err(e) = iobufs.write_to_log(&iobuf) {
                     error!(

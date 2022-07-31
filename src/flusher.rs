@@ -59,10 +59,12 @@ fn run(
     pagecache: &Arc<PageCache>,
     flush_every_ms: u64,
 ) {
+    tracing::debug!("run started");
     let flush_every = Duration::from_millis(flush_every_ms);
     let mut shutdown = shutdown.lock();
     let mut wrote_data = false;
     while shutdown.is_running() || wrote_data {
+        tracing::debug!("run while loop started");
         let before = std::time::Instant::now();
         let cc = concurrency_control::read();
         match pagecache.log.roll_iobuf() {

@@ -26,6 +26,8 @@ static CONCURRENCY_CONTROL: Lazy<
 > = Lazy::new(init_cc);
 
 fn init_cc() -> ConcurrencyControl {
+    // tracing::info!("init_cc is called");
+    println!("init_cc is called");
     ConcurrencyControl::default()
 }
 
@@ -56,6 +58,7 @@ pub(crate) fn read<'a>() -> Protector<'a> {
 }
 
 pub(crate) fn write<'a>() -> Protector<'a> {
+    println!("write is called");
     CONCURRENCY_CONTROL.write()
 }
 

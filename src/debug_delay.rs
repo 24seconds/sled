@@ -8,6 +8,7 @@ use crate::Lazy;
 /// operations, shaking out more possible interleavings quickly. It gets
 /// fully eliminated by the compiler in non-test code.
 pub fn debug_delay() {
+    tracing::debug!("debug_delay called");
     use std::thread;
     use std::time::Duration;
 
